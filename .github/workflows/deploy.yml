@@ -30,6 +30,8 @@ jobs:
       - run: npm ci
       - run: npm run build
       - name: Publish to gh-pages branch
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
         run: |
           cd dist
           git init
