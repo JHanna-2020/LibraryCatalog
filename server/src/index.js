@@ -8,6 +8,11 @@ const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || "*")
   .split(",")
   .map((s) => s.trim());
 
+// Optional AI fallback for ISBN lookup (Gemini). Leave GEMINI_API_KEY empty to
+// disable it entirely — the databases still work without it.
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY || "";
+const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-2.5-flash";
+
 const app = express();
 app.use(express.json({ limit: "1mb" }));
 app.use(
@@ -219,23 +224,86 @@ async function fromGoogleBooks(isbn) {
   }
 }
 
+// Last-resort AI fallback: for books not in either database (e.g. small-press
+// Coptic titles), ask Gemini — grounded with Google Search so it looks the book
+// up on the web instead of guessing. Results are marked source:"ai" so the
+// website can tell the user to verify them.
+async function fromGemini(isbn) {
+  if (!GEMINI_API_KEY) return null;
+  const prompt =
+    `Find the real published book with ISBN ${isbn} using Google Search. ` +
+    `Reply with ONLY a compact JSON object (no markdown fences) with keys: ` +
+    `found (boolean), title, authors (comma-separated), publisher, published_year (4-digit string), genre. ` +
+    `If you cannot confidently identify a genuine book for this exact ISBN, reply {"found":false}. Never invent details.`;
+  const contents = [{ parts: [{ text: prompt }] }];
+  const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
+  const callGemini = async (withSearch) => {
+    const body = withSearch
+      ? { contents, tools: [{ google_search: {} }] }
+      : { contents };
+    const r = await fetch(endpoint, {
+      method: "POST",
+      headers: { "content-type": "application/json", "x-goog-api-key": GEMINI_API_KEY },
+      body: JSON.stringify(body),
+    });
+    if (!r.ok) throw new Error(`gemini ${r.status}`);
+    return r.json();
+  };
+  try {
+    // Try grounded search first; if the key/tier won't allow it, fall back to
+    // an ungrounded answer rather than failing outright.
+    let data;
+    try {
+      data = await callGemini(true);
+    } catch {
+      data = await callGemini(false);
+    }
+    const text =
+      (data.candidates?.[0]?.content?.parts || []).map((p) => p.text || "").join("") || "";
+    const jsonStr = (text.match(/\{[\s\S]*\}/) || [])[0];
+    if (!jsonStr) return null;
+    const obj = JSON.parse(jsonStr);
+    if (!obj || obj.found === false || !obj.title) return null;
+    return {
+      title: String(obj.title || ""),
+      authors: String(obj.authors || ""),
+      publisher: String(obj.publisher || ""),
+      published_year: String(obj.published_year || "").match(/\d{4}/)?.[0] || "",
+      cover_url: "",
+      genre: String(obj.genre || ""),
+      notes: "",
+    };
+  } catch {
+    return null;
+  }
+}
+
 app.get("/api/lookup/:isbn", async (req, res) => {
   const isbn = String(req.params.isbn).replace(/[^0-9Xx]/g, "");
   if (!isbn) return res.status(400).json({ error: "Invalid ISBN." });
   const [ol, gb] = await Promise.all([fromOpenLibrary(isbn), fromGoogleBooks(isbn)]);
-  if (!ol && !gb) return res.status(404).json({ error: "No match found for that ISBN." });
+  let source = ol || gb ? "database" : "";
+  // Only spend an AI call when the free databases came up empty.
+  let ai = null;
+  if (!ol && !gb) {
+    ai = await fromGemini(isbn);
+    if (ai) source = "ai";
+  }
+  if (!ol && !gb && !ai) {
+    return res.status(404).json({ error: "No match found for that ISBN." });
+  }
   const pick = (...vals) => vals.find((v) => v && v.length) || "";
   res.json({
     isbn,
-    // Prefer Open Library's library-grade bibliographic fields, fill gaps from Google.
-    title: pick(ol?.title, gb?.title),
-    authors: pick(ol?.authors, gb?.authors),
-    publisher: pick(ol?.publisher, gb?.publisher),
-    published_year: pick(ol?.published_year, gb?.published_year),
+    // Prefer Open Library's library-grade fields, then Google, then AI.
+    title: pick(ol?.title, gb?.title, ai?.title),
+    authors: pick(ol?.authors, gb?.authors, ai?.authors),
+    publisher: pick(ol?.publisher, gb?.publisher, ai?.publisher),
+    published_year: pick(ol?.published_year, gb?.published_year, ai?.published_year),
     cover_url: pick(ol?.cover_url, gb?.cover_url),
-    // Google's categories/description tend to be cleaner for these two.
-    genre: pick(gb?.genre, ol?.genre),
+    genre: pick(gb?.genre, ol?.genre, ai?.genre),
     notes: pick(gb?.notes),
+    source, // "database" | "ai" — the website flags AI results for review
   });
 });
 
