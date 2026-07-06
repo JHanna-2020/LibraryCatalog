@@ -5,9 +5,10 @@ import type { Book, BookInput, Checkout, CoverAsset } from "./types";
 // them — set them once on the Settings screen.
 const API_KEY = "lib_api_base";
 const PW_KEY = "lib_admin_pw";
+const DEFAULT_API_BASE = "https://room-controller.tail8ef820.ts.net";
 
 export function getApiBase(): string {
-  return (localStorage.getItem(API_KEY) || "").replace(/\/+$/, "");
+  return (localStorage.getItem(API_KEY) || DEFAULT_API_BASE).replace(/\/+$/, "");
 }
 export function setApiBase(url: string) {
   localStorage.setItem(API_KEY, url.trim());

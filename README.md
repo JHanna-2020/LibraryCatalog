@@ -82,7 +82,8 @@ This gives your laptop a public `https://` address the website can reach.
 
 1. Open your GitHub Pages link.
 2. Go to **Settings** in the app.
-3. Paste your **Cloudflare Tunnel URL** into "Library server address".
+3. The default server address is `https://room-controller.tail8ef820.ts.net`.
+   Change "Library server address" only if the server moves.
 4. Enter your **admin password** and click **Save & connect**. You should see
    "Connected ✓".
 
