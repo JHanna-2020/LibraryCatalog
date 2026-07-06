@@ -737,15 +737,3 @@ input, select, textarea { font: inherit; color: inherit; }
   * { transition: none !important; animation: none !important; }
   .card:hover { transform: none; }
 }
-
-/* AI-sourced ISBN lookup warning inside the add/edit form */
-.ai-note {
-  margin: 0 0 0.7rem;
-  padding: 0.55rem 0.7rem;
-  font-size: 0.82rem;
-  line-height: 1.4;
-  color: var(--madder);
-  background: var(--madder-tint);
-  border: 1px solid var(--madder);
-  border-radius: var(--radius);
-}

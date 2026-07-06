@@ -421,7 +421,6 @@ function BookForm({
   const [err, setErr] = useState("");
   const [scanning, setScanning] = useState(false);
   const [looking, setLooking] = useState(false);
-  const [aiFilled, setAiFilled] = useState(false);
 
   const set = (k: keyof BookInput) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
     setData((d) => ({ ...d, [k]: e.target.value }));
@@ -430,10 +429,8 @@ function BookForm({
     if (!isbn.trim()) return;
     setLooking(true);
     setErr("");
-    setAiFilled(false);
     try {
       const found = await api.lookupIsbn(isbn);
-      setAiFilled(found.source === "ai");
       setData((d) => ({
         ...d,
         isbn: found.isbn || d.isbn,
@@ -480,12 +477,6 @@ function BookForm({
             </button>
             <button type="button" className="btn" onClick={() => setScanning(true)}>Scan</button>
           </div>
-
-          {aiFilled && (
-            <p className="ai-note">
-              ⚠ These details were found by AI, not a book database — please double-check them before saving.
-            </p>
-          )}
 
           <label className="field">
             <span>Title *</span>

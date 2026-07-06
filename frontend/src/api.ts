@@ -69,7 +69,5 @@ export const api = {
 
   listCheckouts: () => request<Checkout[]>("/api/checkouts"),
   lookupIsbn: (isbn: string) =>
-    request<Partial<BookInput> & { source?: string }>(
-      `/api/lookup/${encodeURIComponent(isbn)}`
-    ),
+    request<Partial<BookInput>>(`/api/lookup/${encodeURIComponent(isbn)}`),
 };
