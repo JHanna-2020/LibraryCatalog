@@ -1,0 +1,12 @@
+node_modules/
+dist/
+.env
+server/library.db
+server/library.db-shm
+server/library.db-wal
+.DS_Store
+*.log
+*.tsbuildinfo
+
+# Auto-deploy workflow — re-add after granting the gh CLI "workflow" scope
+.github/workflows/
