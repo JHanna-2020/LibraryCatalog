@@ -174,26 +174,69 @@ app.get("/api/checkouts", (req, res) => {
 // ISBN lookup (auto-fill) via Open Library — proxied so the browser never
 // needs a CORS exception and you can add other sources later.
 // ---------------------------------------------------------------------------
+// Two free, no-key book databases. We query both and merge, so a scan fills in
+// as many fields as possible. Neither costs anything.
+async function fromOpenLibrary(isbn) {
+  try {
+    const r = await fetch(
+      `https://openlibrary.org/api/books?bibkeys=ISBN:${isbn}&format=json&jscmd=data`
+    );
+    const e = (await r.json())[`ISBN:${isbn}`];
+    if (!e) return null;
+    return {
+      title: e.title || "",
+      authors: (e.authors || []).map((a) => a.name).join(", "),
+      publisher: (e.publishers || []).map((p) => p.name).join(", "),
+      published_year: (e.publish_date || "").match(/\d{4}/)?.[0] || "",
+      cover_url: e.cover?.large || e.cover?.medium || "",
+      genre: (e.subjects || []).slice(0, 3).map((s) => s.name).join(", "),
+      notes: "",
+    };
+  } catch {
+    return null;
+  }
+}
+
+async function fromGoogleBooks(isbn) {
+  try {
+    const r = await fetch(`https://www.googleapis.com/books/v1/volumes?q=isbn:${isbn}`);
+    const v = (await r.json()).items?.[0]?.volumeInfo;
+    if (!v) return null;
+    return {
+      title: v.subtitle ? `${v.title}: ${v.subtitle}` : v.title || "",
+      authors: (v.authors || []).join(", "),
+      publisher: v.publisher || "",
+      published_year: (v.publishedDate || "").match(/\d{4}/)?.[0] || "",
+      cover_url: (v.imageLinks?.thumbnail || v.imageLinks?.smallThumbnail || "").replace(
+        "http://",
+        "https://"
+      ),
+      genre: (v.categories || []).join(", "),
+      notes: v.description || "",
+    };
+  } catch {
+    return null;
+  }
+}
+
 app.get("/api/lookup/:isbn", async (req, res) => {
   const isbn = String(req.params.isbn).replace(/[^0-9Xx]/g, "");
   if (!isbn) return res.status(400).json({ error: "Invalid ISBN." });
-  try {
-    const url = `https://openlibrary.org/api/books?bibkeys=ISBN:${isbn}&format=json&jscmd=data`;
-    const r = await fetch(url);
-    const data = await r.json();
-    const entry = data[`ISBN:${isbn}`];
-    if (!entry) return res.status(404).json({ error: "No match found for that ISBN." });
-    res.json({
-      title: entry.title || "",
-      authors: (entry.authors || []).map((a) => a.name).join(", "),
-      publisher: (entry.publishers || []).map((p) => p.name).join(", "),
-      published_year: (entry.publish_date || "").match(/\d{4}/)?.[0] || "",
-      cover_url: entry.cover?.medium || entry.cover?.large || "",
-      isbn,
-    });
-  } catch (err) {
-    res.status(502).json({ error: "Lookup service unavailable." });
-  }
+  const [ol, gb] = await Promise.all([fromOpenLibrary(isbn), fromGoogleBooks(isbn)]);
+  if (!ol && !gb) return res.status(404).json({ error: "No match found for that ISBN." });
+  const pick = (...vals) => vals.find((v) => v && v.length) || "";
+  res.json({
+    isbn,
+    // Prefer Open Library's library-grade bibliographic fields, fill gaps from Google.
+    title: pick(ol?.title, gb?.title),
+    authors: pick(ol?.authors, gb?.authors),
+    publisher: pick(ol?.publisher, gb?.publisher),
+    published_year: pick(ol?.published_year, gb?.published_year),
+    cover_url: pick(ol?.cover_url, gb?.cover_url),
+    // Google's categories/description tend to be cleaner for these two.
+    genre: pick(gb?.genre, ol?.genre),
+    notes: pick(gb?.notes),
+  });
 });
 
 app.listen(PORT, () => {

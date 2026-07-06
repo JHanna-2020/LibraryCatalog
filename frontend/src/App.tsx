@@ -439,6 +439,9 @@ function BookForm({
         publisher: found.publisher || d.publisher,
         published_year: found.published_year || d.published_year,
         cover_url: found.cover_url || d.cover_url,
+        genre: found.genre || d.genre,
+        // Don't clobber notes the user already typed.
+        notes: d.notes || found.notes || "",
       }));
     } catch (e) {
       setErr((e as Error).message);
