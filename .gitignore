@@ -8,6 +8,4 @@ server/library.db-wal
 *.log
 *.tsbuildinfo
 
-# Auto-deploy workflow — re-add after granting the gh CLI "workflow" scope
-.github/workflows/
 server/covers/
