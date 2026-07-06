@@ -31,6 +31,13 @@ export interface Checkout {
   cover_url: string;
 }
 
+export interface CoverAsset {
+  name: string;
+  url: string;
+  size: number;
+  modified_at: string;
+}
+
 // Data used by the add/edit form. Tags handled as a raw string in the form.
 export interface BookInput {
   title: string;
@@ -43,4 +50,7 @@ export interface BookInput {
   tags: string;
   location: string;
   notes: string;
+  // Optional base64 data-URL of a newly uploaded cover photo (transient — sent
+  // to the server on save, which stores it and sets cover_url).
+  cover_data?: string;
 }

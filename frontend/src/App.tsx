@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
-import { api, getApiBase, setApiBase, getPassword, setPassword, clearPassword } from "./api";
-import type { Book, BookInput, Checkout } from "./types";
+import { api, getApiBase, setApiBase, getPassword, setPassword, clearPassword, coverSrc } from "./api";
+import type { Book, BookInput, Checkout, CoverAsset } from "./types";
 import BarcodeScanner from "./BarcodeScanner";
 
 type View = "catalog" | "out" | "settings";
@@ -9,6 +9,30 @@ const EMPTY_BOOK: BookInput = {
   title: "", authors: "", isbn: "", publisher: "", published_year: "",
   cover_url: "", genre: "", tags: "", location: "", notes: "",
 };
+
+// Shrink a chosen photo in the browser before upload: caps the largest side and
+// re-encodes to JPEG, keeping files small and consistent for the server.
+async function fileToResizedDataUrl(file: File, max = 800, quality = 0.82): Promise<string> {
+  const readAsDataUrl = new Promise<string>((resolve, reject) => {
+    const fr = new FileReader();
+    fr.onload = () => resolve(fr.result as string);
+    fr.onerror = () => reject(new Error("Could not read that file."));
+    fr.readAsDataURL(file);
+  });
+  const src = await readAsDataUrl;
+  const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+    const i = new Image();
+    i.onload = () => resolve(i);
+    i.onerror = () => reject(new Error("That file isn't a readable image."));
+    i.src = src;
+  });
+  const scale = Math.min(1, max / Math.max(img.width, img.height));
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.round(img.width * scale);
+  canvas.height = Math.round(img.height * scale);
+  canvas.getContext("2d")!.drawImage(img, 0, 0, canvas.width, canvas.height);
+  return canvas.toDataURL("image/jpeg", quality);
+}
 
 export default function App() {
   const [view, setView] = useState<View>("catalog");
@@ -332,7 +356,7 @@ function BookCard({
     <div className="card">
       <div className="cover">
         {book.cover_url
-          ? <img src={book.cover_url} alt="" loading="lazy" />
+          ? <img src={coverSrc(book.cover_url)} alt="" loading="lazy" />
           : <div className="cover-placeholder">{book.title.slice(0, 1).toUpperCase()}</div>}
         <span className={"badge " + (out ? "badge-out" : "badge-in")}>
           {out ? "Out" : "In"}
@@ -421,9 +445,31 @@ function BookForm({
   const [err, setErr] = useState("");
   const [scanning, setScanning] = useState(false);
   const [looking, setLooking] = useState(false);
+  const [covers, setCovers] = useState<CoverAsset[]>([]);
+  const [coversLoading, setCoversLoading] = useState(false);
+  const [showCoverPicker, setShowCoverPicker] = useState(false);
+  const coverPreview = data.cover_data || (data.cover_url ? coverSrc(data.cover_url) : "");
 
   const set = (k: keyof BookInput) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
     setData((d) => ({ ...d, [k]: e.target.value }));
+
+  useEffect(() => {
+    let active = true;
+    setCoversLoading(true);
+    api.listCovers()
+      .then((items) => {
+        if (active) setCovers(items);
+      })
+      .catch(() => {
+        if (active) setCovers([]);
+      })
+      .finally(() => {
+        if (active) setCoversLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   async function lookup(isbn: string) {
     if (!isbn.trim()) return;
@@ -448,6 +494,26 @@ function BookForm({
     } finally {
       setLooking(false);
     }
+  }
+
+  async function chooseCover(file: File | undefined) {
+    if (!file) return;
+    setErr("");
+    try {
+      const cover_data = await fileToResizedDataUrl(file);
+      setData((d) => ({ ...d, cover_data }));
+    } catch (e) {
+      setErr((e as Error).message);
+    }
+  }
+
+  function clearCoverPhoto() {
+    setData((d) => ({ ...d, cover_data: undefined, cover_url: "" }));
+  }
+
+  function selectSavedCover(cover: CoverAsset) {
+    setData((d) => ({ ...d, cover_data: undefined, cover_url: cover.url }));
+    setShowCoverPicker(false);
   }
 
   async function submit(e: React.FormEvent) {
@@ -514,6 +580,61 @@ function BookForm({
             <span>Cover image URL</span>
             <input value={data.cover_url} onChange={set("cover_url")} />
           </label>
+          <div className="cover-upload">
+            <div className="cover-upload-preview" aria-hidden="true">
+              {coverPreview
+                ? <img src={coverPreview} alt="" />
+                : <div className="cover-placeholder">{data.title.slice(0, 1).toUpperCase() || "?"}</div>}
+            </div>
+            <div className="cover-upload-controls">
+              <button type="button" className="btn" onClick={() => setShowCoverPicker((v) => !v)}>
+                Choose saved cover
+              </button>
+              <label className="btn">
+                Upload cover photo
+                <input
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  onChange={(e) => chooseCover(e.target.files?.[0])}
+                />
+              </label>
+              {coverPreview && (
+                <button type="button" className="btn btn-ghost" onClick={clearCoverPhoto}>
+                  Remove cover
+                </button>
+              )}
+              <p className="muted small">
+                Photos are saved in the server's <code>server/covers</code> folder.
+              </p>
+            </div>
+          </div>
+          {showCoverPicker && (
+            <div className="cover-picker">
+              {coversLoading ? (
+                <p className="muted small">Loading saved covers...</p>
+              ) : covers.length === 0 ? (
+                <p className="muted small">No saved covers found in <code>server/covers</code>.</p>
+              ) : (
+                <div className="cover-picker-grid">
+                  {covers.map((cover) => (
+                    <button
+                      type="button"
+                      key={cover.name}
+                      className={
+                        "cover-choice" + (data.cover_url === cover.url ? " cover-choice-selected" : "")
+                      }
+                      onClick={() => selectSavedCover(cover)}
+                      title={cover.name}
+                    >
+                      <img src={coverSrc(cover.url)} alt="" loading="lazy" />
+                      <span>{cover.name}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
           <label className="field">
             <span>Notes</span>
             <textarea value={data.notes} onChange={set("notes")} rows={2} />

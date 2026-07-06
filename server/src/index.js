@@ -1,6 +1,11 @@
 import express from "express";
 import cors from "cors";
+import fs from "node:fs";
+import { fileURLToPath } from "node:url";
+import { dirname, join } from "node:path";
 import db from "./db.js";
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const PORT = process.env.PORT || 4000;
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "change-me-please";
@@ -8,15 +13,74 @@ const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || "*")
   .split(",")
   .map((s) => s.trim());
 
+// Book cover photos are stored here on the server and served at /covers.
+// Back this folder up alongside library.db.
+const COVERS_DIR = join(__dirname, "..", "covers");
+const MAX_COVER_BYTES = 6 * 1024 * 1024;
+fs.mkdirSync(COVERS_DIR, { recursive: true });
+
 const app = express();
-app.use(express.json({ limit: "1mb" }));
+// Limit is generous because uploaded cover photos arrive as base64 in the body.
+app.use(express.json({ limit: "12mb" }));
 app.use(
   cors({
     origin: ALLOWED_ORIGINS.includes("*") ? true : ALLOWED_ORIGINS,
   })
 );
+// Serve stored cover images. Long cache; we cache-bust with ?t= on update.
+app.use("/covers", express.static(COVERS_DIR, { maxAge: "365d" }));
 
 const now = () => new Date().toISOString();
+
+function badRequest(message) {
+  const err = new Error(message);
+  err.status = 400;
+  return err;
+}
+
+function readCoverUpload(dataUrl) {
+  if (!dataUrl) return null;
+  const m = /^data:image\/[a-zA-Z+]+;base64,([\s\S]+)$/.exec(String(dataUrl || ""));
+  if (!m) throw badRequest("Cover photo must be a valid image upload.");
+  const buf = Buffer.from(m[1], "base64");
+  if (!buf.length) throw badRequest("Cover photo is empty.");
+  if (buf.length > MAX_COVER_BYTES) {
+    throw badRequest("Cover photo is too large. Try a smaller photo.");
+  }
+  return buf;
+}
+
+// Save a browser-normalized JPEG as covers/<id>.jpg and return the URL path the
+// website should store.
+function saveCover(id, buf) {
+  fs.writeFileSync(join(COVERS_DIR, `${id}.jpg`), buf);
+  // Relative path + cache-buster; the website prefixes it with the API address.
+  return `/covers/${id}.jpg?t=${Date.now()}`;
+}
+
+function deleteCover(id) {
+  try {
+    fs.unlinkSync(join(COVERS_DIR, `${id}.jpg`));
+  } catch {
+    /* no cover on disk — fine */
+  }
+}
+
+function listCoverAssets() {
+  return fs
+    .readdirSync(COVERS_DIR, { withFileTypes: true })
+    .filter((entry) => entry.isFile() && /\.(jpe?g|png|webp)$/i.test(entry.name))
+    .map((entry) => {
+      const stat = fs.statSync(join(COVERS_DIR, entry.name));
+      return {
+        name: entry.name,
+        url: `/covers/${entry.name}`,
+        size: stat.size,
+        modified_at: stat.mtime.toISOString(),
+      };
+    })
+    .sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
+}
 
 // ---- Auth: a single shared admin password guards all write actions. ----
 // Read actions (GET) are public so borrowers can view the catalog.
@@ -66,6 +130,10 @@ app.get("/api/books/:id", (req, res) => {
   res.json(withStatus(book));
 });
 
+app.get("/api/covers", requireAdmin, (req, res) => {
+  res.json(listCoverAssets());
+});
+
 function normalizeTags(tags) {
   if (Array.isArray(tags)) return tags.map((t) => String(t).trim()).filter(Boolean).join(",");
   return String(tags || "").trim();
@@ -75,6 +143,12 @@ app.post("/api/books", requireAdmin, (req, res) => {
   const b = req.body || {};
   if (!b.title || !String(b.title).trim()) {
     return res.status(400).json({ error: "Title is required." });
+  }
+  let coverBuf = null;
+  try {
+    coverBuf = readCoverUpload(b.cover_data);
+  } catch (e) {
+    return res.status(e.status || 400).json({ error: e.message });
   }
   const info = db
     .prepare(
@@ -94,7 +168,13 @@ app.post("/api/books", requireAdmin, (req, res) => {
       notes: b.notes || "",
       added_at: now(),
     });
-  const book = db.prepare("SELECT * FROM books WHERE id = ?").get(info.lastInsertRowid);
+  const id = info.lastInsertRowid;
+  // If an uploaded photo came with the request, store it and point cover_url at it.
+  if (coverBuf) {
+    const url = saveCover(id, coverBuf);
+    db.prepare("UPDATE books SET cover_url = ? WHERE id = ?").run(url, id);
+  }
+  const book = db.prepare("SELECT * FROM books WHERE id = ?").get(id);
   res.status(201).json(withStatus(book));
 });
 
@@ -102,6 +182,12 @@ app.put("/api/books/:id", requireAdmin, (req, res) => {
   const existing = db.prepare("SELECT * FROM books WHERE id = ?").get(req.params.id);
   if (!existing) return res.status(404).json({ error: "Not found." });
   const b = req.body || {};
+  let coverBuf = null;
+  try {
+    coverBuf = readCoverUpload(b.cover_data);
+  } catch (e) {
+    return res.status(e.status || 400).json({ error: e.message });
+  }
   db.prepare(
     `UPDATE books SET title=@title, authors=@authors, isbn=@isbn, publisher=@publisher,
        published_year=@published_year, cover_url=@cover_url, genre=@genre, tags=@tags,
@@ -119,6 +205,17 @@ app.put("/api/books/:id", requireAdmin, (req, res) => {
     location: b.location ?? existing.location,
     notes: b.notes ?? existing.notes,
   });
+  // A newly uploaded photo replaces whatever cover_url was set above.
+  if (coverBuf) {
+    const url = saveCover(existing.id, coverBuf);
+    db.prepare("UPDATE books SET cover_url = ? WHERE id = ?").run(url, existing.id);
+  } else if (
+    b.cover_url !== undefined &&
+    existing.cover_url.startsWith("/covers/") &&
+    b.cover_url !== existing.cover_url
+  ) {
+    deleteCover(existing.id);
+  }
   const book = db.prepare("SELECT * FROM books WHERE id = ?").get(existing.id);
   res.json(withStatus(book));
 });
@@ -126,6 +223,7 @@ app.put("/api/books/:id", requireAdmin, (req, res) => {
 app.delete("/api/books/:id", requireAdmin, (req, res) => {
   const info = db.prepare("DELETE FROM books WHERE id = ?").run(req.params.id);
   if (info.changes === 0) return res.status(404).json({ error: "Not found." });
+  deleteCover(req.params.id);
   res.json({ ok: true });
 });
 

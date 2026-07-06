@@ -97,8 +97,10 @@ That's it. Add your first book with the **+ Add book** button.
 ## Using it day to day
 
 - **Add a book** — click *+ Add book*. Type or **scan** the ISBN, hit
-  **Auto-fill**, and the title/author/cover fill in automatically. Add tags
-  (comma-separated) and a shelf location.
+  **Auto-fill**, and the title/author/cover fill in automatically. For books
+  without an online cover, use **Choose saved cover** to pick a file already in
+  `server/covers/`, or use **Upload cover photo** to save a new picture on your
+  laptop. Add tags (comma-separated) and a shelf location.
 - **Search & filter** — search box matches title, author, ISBN, and tags;
   dropdowns filter by genre, tag, and availability.
 - **Check out** — click *Check out* on a book, enter the borrower's name.
@@ -109,8 +111,9 @@ That's it. Add your first book with the **+ Add book** button.
 
 ## Backing up your data
 
-Your entire library is the single file `server/library.db`. Copy it somewhere
-safe (cloud drive, external disk) now and then. To restore, put the file back.
+Your book records are in `server/library.db`. Uploaded cover photos are in
+`server/covers/`. Copy both somewhere safe (cloud drive, external disk) now and
+then. To restore, put them back in the same locations.
 
 ## Keeping the server always on
 
@@ -134,6 +137,7 @@ LibraryCatalog/
 │   └── src/
 ├── server/                   # The API + database → your laptop
 │   ├── src/
+│   ├── covers/               # uploaded cover photos (not in git)
 │   └── library.db            # your data (created on first run; not in git)
 └── .github/workflows/        # Auto-deploy the website to GitHub Pages
 ```

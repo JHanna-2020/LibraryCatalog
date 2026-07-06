@@ -1,4 +1,4 @@
-import type { Book, BookInput, Checkout } from "./types";
+import type { Book, BookInput, Checkout, CoverAsset } from "./types";
 
 // The website is static (on GitHub Pages) and points at YOUR laptop's API.
 // These two values are stored in the browser so no rebuild is needed to change
@@ -20,6 +20,15 @@ export function setPassword(pw: string) {
 }
 export function clearPassword() {
   localStorage.removeItem(PW_KEY);
+}
+
+// Cover URLs are stored either as full external URLs (from ISBN lookup) or as a
+// relative "/covers/..." path served by your own server. Resolve the latter
+// against the configured API address so the <img> loads from the laptop.
+export function coverSrc(url: string): string {
+  if (!url) return "";
+  if (/^https?:\/\//i.test(url)) return url;
+  return getApiBase() + url;
 }
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
@@ -54,6 +63,7 @@ export const api = {
   verifyAdmin: () => request<{ ok: boolean }>("/api/verify-admin", { method: "POST" }),
 
   listBooks: () => request<Book[]>("/api/books"),
+  listCovers: () => request<CoverAsset[]>("/api/covers"),
   createBook: (b: BookInput) =>
     request<Book>("/api/books", { method: "POST", body: JSON.stringify(b) }),
   updateBook: (id: number, b: BookInput) =>

@@ -10,3 +10,4 @@ server/library.db-wal
 
 # Auto-deploy workflow — re-add after granting the gh CLI "workflow" scope
 .github/workflows/
+server/covers/
