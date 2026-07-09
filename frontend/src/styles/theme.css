@@ -1,0 +1,123 @@
+/* ---------------------------------------------------------------------------
+   Library Catalog — "the private study"
+   Warm paper, bottle-green leather, a touch of brass. Set in EB Garamond
+   (the book face) with Karla for controls and labels.
+
+   This file: design tokens + document-level base styles.
+--------------------------------------------------------------------------- */
+
+:root {
+  color-scheme: light;
+
+  /* Paper & ink */
+  --paper: #f4efe3;
+  --surface: #fdfaf2;
+  --surface-sunken: #ece5d3;
+  --ink: #292314;
+  --muted: #7d7360;
+  --line: #ddd3bb;
+  --line-soft: #e8e0cc;
+
+  /* The study */
+  --green: #2e4b3a;        /* bottle-green leather */
+  --green-deep: #223a2c;
+  --green-tint: #e2e7dc;
+  --brass: #a0762b;        /* gilt details */
+  --brass-soft: #c9a75c;
+
+  /* Status */
+  --madder: #a63d2a;       /* checked out / errors */
+  --madder-tint: #f4e2dc;
+  --leaf: #3e6b46;         /* on the shelf */
+
+  --serif: "EB Garamond", Georgia, "Times New Roman", serif;
+  --sans: "Karla", system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  --radius: 4px;
+  --shadow-card: 0 1px 2px rgba(52, 42, 18, 0.08), 0 2px 8px rgba(52, 42, 18, 0.06);
+  --shadow-lift: 0 2px 4px rgba(52, 42, 18, 0.1), 0 10px 24px rgba(52, 42, 18, 0.12);
+  --shadow-modal: 0 12px 48px rgba(35, 27, 10, 0.35);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+
+    --paper: #161309;
+    --surface: #211d10;
+    --surface-sunken: #1b1810;
+    --ink: #e9e0c9;
+    --muted: #9d9276;
+    --line: #3a3420;
+    --line-soft: #2e2917;
+
+    --green: #395c47;
+    --green-deep: #2c4a38;
+    --green-tint: #22301f;
+    --brass: #c9a75c;
+    --brass-soft: #a0762b;
+
+    --madder: #c96a52;
+    --madder-tint: #3a231b;
+    --leaf: #7ba474;
+
+    --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.4), 0 2px 8px rgba(0, 0, 0, 0.3);
+    --shadow-lift: 0 2px 4px rgba(0, 0, 0, 0.45), 0 10px 24px rgba(0, 0, 0, 0.4);
+    --shadow-modal: 0 12px 48px rgba(0, 0, 0, 0.65);
+  }
+}
+
+/* ---- Base ---------------------------------------------------------------- */
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: var(--sans);
+  font-size: 16px;
+  line-height: 1.5;
+  background: var(--paper);
+  /* faint paper mottle */
+  background-image:
+    radial-gradient(ellipse at 20% -10%, rgba(255, 255, 255, 0.35), transparent 55%),
+    radial-gradient(ellipse at 100% 100%, rgba(120, 96, 40, 0.05), transparent 60%);
+  background-attachment: fixed;
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+}
+
+@media (prefers-color-scheme: dark) {
+  body {
+    background-image:
+      radial-gradient(ellipse at 20% -10%, rgba(201, 167, 92, 0.05), transparent 55%),
+      radial-gradient(ellipse at 100% 100%, rgba(0, 0, 0, 0.4), transparent 60%);
+  }
+}
+
+h2, h3 {
+  margin: 0 0 0.4rem;
+  font-family: var(--serif);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+h2 { font-size: 1.6rem; }
+
+button { font: inherit; cursor: pointer; color: inherit; }
+input, select, textarea { font: inherit; color: inherit; }
+
+:is(button, input, select, textarea, .navlink):focus-visible {
+  outline: 2px solid var(--brass);
+  outline-offset: 2px;
+}
+
+::selection { background: var(--brass-soft); color: #241d0c; }
+
+.muted { color: var(--muted); }
+.small { font-size: 0.8rem; }
+
+/* ---- Reduced motion ------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; animation: none !important; }
+  .card:hover { transform: none; }
+}

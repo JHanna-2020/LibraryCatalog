@@ -2,7 +2,9 @@
 
 A personal library catalog website. Add books (with ISBN auto-fill and barcode
 scanning), organize them with tags and shelves, check books out to people, and
-see who has what — all from a link you can open on any device.
+see who has what — all from a link you can open on any device. Visitors can
+even **request a hold** on a checked-out book so it's set aside for them when
+it comes back.
 
 ## How it works
 
@@ -38,11 +40,17 @@ cp .env.example .env
 ```
 
 Open `.env` in a text editor and set your **admin password** (this is what
-unlocks editing). Then start it:
+unlocks editing). Then build and start it:
 
 ```bash
+npm run build
 npm start
 ```
+
+> The first time the new server starts against an existing `library.db`, it
+> automatically upgrades the database (adding borrowers, loan history, and
+> holds). Make a quick copy of `server/library.db` first if you want an extra
+> safety net.
 
 You should see `Library catalog API running on http://localhost:4000`.
 Leave this running. To keep it running permanently after you close the terminal
@@ -106,9 +114,14 @@ That's it. Add your first book with the **+ Add book** button.
   dropdowns filter by genre, tag, and availability.
 - **Check out** — click *Check out* on a book, enter the borrower's name.
 - **Who has what** — the **Checked Out** tab lists every borrowed book grouped
-  by person.
+  by person. The **Borrowers** tab shows everyone who has ever borrowed, with
+  their full history; clicking a book shows that book's loan history too.
+- **Holds** — anyone viewing the site can click **Request hold** on a
+  checked-out book and leave their name. You'll see the queue in the
+  admin-only **Holds** tab, and when you check the book back in the app tells
+  you who's next in line so you can set it aside.
 - **Borrowers viewing** — just share your GitHub Pages link. Without the admin
-  password they see a clean read-only catalog.
+  password they see a clean read-only catalog (plus the hold-request button).
 
 ## Backing up your data
 
@@ -134,14 +147,29 @@ pm2 startup   # follow the printed instructions so it survives reboots
 
 ```
 LibraryCatalog/
-├── frontend/                 # The website (React + Vite) → GitHub Pages
+├── frontend/                 # The website (React + Vite + TypeScript) → GitHub Pages
 │   └── src/
-├── server/                   # The API + database → your laptop
+│       ├── api/              # typed API client
+│       ├── components/       # cards, modals, dialogs, scanner, toasts
+│       ├── views/            # Catalog, Checked Out, Borrowers, Holds, Settings
+│       ├── hooks/            # data loading, admin session, toasts
+│       └── styles/           # the "private study" theme, split by concern
+├── server/                   # The API + database (TypeScript) → your laptop
 │   ├── src/
+│   │   ├── db/migrations/    # versioned schema upgrades, run at startup
+│   │   ├── repositories/     # all SQL (books, loans, borrowers, holds)
+│   │   ├── services/         # business logic (checkouts, holds, covers, ISBN)
+│   │   ├── routes/           # thin Express routers
+│   │   └── middleware/       # admin auth, validation, rate limits, errors
+│   ├── test/                 # Vitest suite (40 tests)
 │   ├── covers/               # uploaded cover photos (not in git)
 │   └── library.db            # your data (created on first run; not in git)
 └── .github/workflows/        # Auto-deploy the website to GitHub Pages
 ```
+
+To work on the code: `npm run dev` in `frontend/` and `npm run dev` in
+`server/` (auto-reloading TypeScript). Run tests with `npm test` in either
+directory.
 
 ## Image credits
 
@@ -152,6 +180,8 @@ LibraryCatalog/
 
 ## Tech stack
 
-React + Vite + TypeScript (frontend) · Node.js + Express + better-sqlite3
-(backend) · Open Library API (ISBN lookup) · ZXing (barcode scanning) ·
-Cloudflare Tunnel (secure exposure) · GitHub Pages + Actions (hosting).
+React + Vite + TypeScript (frontend) · Node.js + Express + TypeScript +
+better-sqlite3 with versioned migrations (backend) · Zod (validation) · Vitest
+(tests) · Open Library + Google Books APIs (ISBN lookup) · ZXing (barcode
+scanning) · Cloudflare Tunnel (secure exposure) · GitHub Pages + Actions
+(hosting).

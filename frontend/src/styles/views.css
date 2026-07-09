@@ -1,0 +1,279 @@
+/* View-specific styles: checked-out ledger, borrowers, book detail, settings, toasts. */
+
+/* ---- Checked out: the loan ledger ------------------------------------------ */
+
+.borrowers { display: grid; gap: 1rem; max-width: 720px; }
+
+.borrower-block {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 1.1rem 1.4rem 1.2rem;
+  box-shadow: var(--shadow-card);
+  border-top: 3px solid var(--green);
+}
+@media (prefers-color-scheme: dark) {
+  .borrower-block { border-top-color: var(--brass); }
+}
+.borrower-name {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 1.35rem;
+  margin-bottom: 0.1rem;
+}
+
+.loan-list { margin: 0.6rem 0 0; padding: 0; list-style: none; }
+.loan-list li {
+  padding: 0.45rem 0;
+  border-bottom: 1px dotted var(--line);
+  font-size: 0.95rem;
+}
+.loan-list li:last-child { border-bottom: none; }
+.loan-title { font-family: var(--serif); font-weight: 600; font-size: 1.05rem; }
+
+/* ---- Borrowers directory ----------------------------------------------------- */
+
+.borrower-ledger {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  max-width: 720px;
+  display: grid;
+  gap: 0.6rem;
+}
+.borrower-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.35rem 0.75rem;
+  width: 100%;
+  padding: 0.85rem 1.2rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
+  text-align: left;
+  transition: box-shadow 160ms ease, border-color 120ms ease;
+}
+.borrower-row:hover {
+  box-shadow: var(--shadow-lift);
+  border-color: var(--green);
+}
+@media (prefers-color-scheme: dark) {
+  .borrower-row:hover { border-color: var(--brass); }
+}
+.borrower-row-name {
+  font-family: var(--serif);
+  font-weight: 600;
+  font-size: 1.15rem;
+}
+.borrower-row-contact { font-size: 0.85rem; }
+.borrower-row-counts {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+/* ---- Loan history (book detail & borrower modal) ----------------------------- */
+
+.history-list { margin: 0.4rem 0 0; padding: 0; list-style: none; }
+.history-list li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.15rem 0.6rem;
+  padding: 0.45rem 0;
+  border-bottom: 1px dotted var(--line);
+  font-size: 0.92rem;
+}
+.history-list li:last-child { border-bottom: none; }
+.history-borrower { font-weight: 700; }
+.history-dates { margin-left: auto; color: var(--muted); white-space: nowrap; }
+.history-active .history-dates { color: var(--madder); }
+.history-dates em { font-style: italic; }
+
+/* ---- Book detail modal --------------------------------------------------------- */
+
+.detail-layout {
+  display: flex;
+  gap: 1.25rem;
+  margin-bottom: 1.25rem;
+}
+.detail-cover {
+  flex: 0 0 130px;
+  aspect-ratio: 2 / 3;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface-sunken);
+  align-self: flex-start;
+}
+.detail-cover img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.detail-cover .cover-placeholder { font-size: 2.4rem; }
+.detail-info { flex: 1; min-width: 0; }
+.detail-authors {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 1.1rem;
+  color: var(--muted);
+  margin: 0 0 0.6rem;
+}
+.detail-meta {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.2rem 0.9rem;
+  margin: 0;
+}
+.detail-meta dt {
+  font-size: 0.68rem;
+  color: var(--muted);
+  font-weight: 700;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  align-self: baseline;
+}
+.detail-meta dd { margin: 0; font-size: 0.95rem; }
+.detail-out { color: var(--madder); }
+.detail-notes {
+  margin: 0.75rem 0 0;
+  padding-top: 0.6rem;
+  border-top: 1px dotted var(--line);
+  font-family: var(--serif);
+  font-size: 1rem;
+  white-space: pre-wrap;
+}
+.detail-section-title {
+  font-size: 1.15rem;
+  padding-bottom: 0.35rem;
+  border-bottom: 1px solid var(--line);
+}
+
+@media (max-width: 640px) {
+  .detail-layout { gap: 0.9rem; }
+  .detail-cover { flex-basis: 96px; }
+}
+
+/* ---- Holds queue (admin) ------------------------------------------------------- */
+
+.hold-ledger {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  max-width: 720px;
+  display: grid;
+  gap: 0.6rem;
+}
+.hold-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.85rem 1.2rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
+  border-left: 3px solid var(--brass);
+}
+.hold-position {
+  flex-shrink: 0;
+  width: 1.7rem;
+  height: 1.7rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--brass-soft);
+  border-radius: 999px;
+  color: var(--brass);
+  font-family: var(--serif);
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+.hold-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+.hold-requester { font-size: 0.92rem; }
+.hold-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  justify-content: flex-end;
+}
+
+@media (max-width: 640px) {
+  .hold-row { flex-wrap: wrap; }
+  .hold-actions { flex-basis: 100%; }
+}
+
+/* ---- Hold handoff (after check-in) ---------------------------------------------- */
+
+.handoff-lead {
+  font-family: var(--serif);
+  font-size: 1.1rem;
+  margin: 0 0 0.35rem;
+}
+
+.detail-holds { color: var(--brass); font-weight: 600; }
+
+/* ---- Settings ------------------------------------------------------------------ */
+
+.settings { max-width: 560px; }
+.settings h2 { font-size: 1.8rem; }
+.settings > .muted { font-family: var(--serif); font-size: 1.05rem; margin-bottom: 1.4rem; }
+.settings-status { font-size: 0.92rem; margin-top: 0.75rem; }
+
+/* ---- Toasts ---------------------------------------------------------------------- */
+
+.toast-stack {
+  position: fixed;
+  bottom: 1.25rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: min(420px, calc(100vw - 2rem));
+}
+.toast {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  padding: 0.7rem 0.9rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: var(--shadow-lift);
+  font-size: 0.92rem;
+  animation: toast-in 160ms ease-out both;
+  border-left: 3px solid var(--brass);
+}
+.toast-success { border-left-color: var(--leaf); }
+.toast-error { border-left-color: var(--madder); background: var(--madder-tint); color: var(--madder); }
+.toast-message { flex: 1; }
+.toast-close {
+  border: none;
+  background: none;
+  padding: 0 0.15rem;
+  font-size: 1.1rem;
+  line-height: 1;
+  color: inherit;
+  opacity: 0.65;
+}
+.toast-close:hover { opacity: 1; }
+
+@keyframes toast-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}

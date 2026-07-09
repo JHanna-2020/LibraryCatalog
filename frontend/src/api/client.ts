@@ -1,8 +1,21 @@
-import type { Book, BookInput, Checkout, CoverAsset } from "./types";
+import type {
+  Book,
+  BookInput,
+  Borrower,
+  BorrowerLoan,
+  Checkout,
+  CheckinResponse,
+  CoverAsset,
+  Hold,
+  HoldReceipt,
+  LoanRecord,
+} from "./types";
 
 // The website is static (on GitHub Pages) and points at YOUR laptop's API.
 // These two values are stored in the browser so no rebuild is needed to change
 // them — set them once on the Settings screen.
+// NOTE: the storage keys, default URL and header name are a compatibility
+// contract with existing users' browsers. Do not rename them.
 const API_KEY = "lib_api_base";
 const PW_KEY = "lib_admin_pw";
 const DEFAULT_API_BASE = "https://room-controller.tail8ef820.ts.net";
@@ -32,6 +45,16 @@ export function coverSrc(url: string): string {
   return getApiBase() + url;
 }
 
+/** Error carrying the HTTP status so callers can special-case e.g. 409. */
+export class ApiError extends Error {
+  status: number;
+  constructor(message: string, status: number) {
+    super(message);
+    this.name = "ApiError";
+    this.status = status;
+  }
+}
+
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const base = getApiBase();
   if (!base) throw new Error("No server URL set. Open Settings and enter your API address.");
@@ -53,7 +76,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     } catch {
       /* keep default */
     }
-    throw new Error(message);
+    throw new ApiError(message, res.status);
   }
   if (res.status === 204) return undefined as T;
   return res.json() as Promise<T>;
@@ -64,6 +87,7 @@ export const api = {
   verifyAdmin: () => request<{ ok: boolean }>("/api/verify-admin", { method: "POST" }),
 
   listBooks: () => request<Book[]>("/api/books"),
+  getBook: (id: number) => request<Book>(`/api/books/${id}`),
   listCovers: () => request<CoverAsset[]>("/api/covers"),
   createBook: (b: BookInput) =>
     request<Book>("/api/books", { method: "POST", body: JSON.stringify(b) }),
@@ -76,9 +100,24 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ borrower_name, borrower_contact }),
     }),
-  checkin: (id: number) => request<Book>(`/api/books/${id}/checkin`, { method: "POST" }),
+  checkin: (id: number) => request<CheckinResponse>(`/api/books/${id}/checkin`, { method: "POST" }),
 
   listCheckouts: () => request<Checkout[]>("/api/checkouts"),
   lookupIsbn: (isbn: string) =>
     request<Partial<BookInput>>(`/api/lookup/${encodeURIComponent(isbn)}`),
+
+  bookHistory: (id: number) => request<LoanRecord[]>(`/api/books/${id}/history`),
+  listBorrowers: () => request<Borrower[]>("/api/borrowers"),
+  borrowerLoans: (id: number) => request<BorrowerLoan[]>(`/api/borrowers/${id}/loans`),
+
+  // Holds. Requesting one is public; managing the queue is admin-only.
+  requestHold: (bookId: number, name: string, contact: string) =>
+    request<HoldReceipt>(`/api/books/${bookId}/holds`, {
+      method: "POST",
+      body: JSON.stringify({ name, contact }),
+    }),
+  listHolds: () => request<Hold[]>("/api/holds"),
+  cancelHold: (id: number) => request<{ ok: boolean }>(`/api/holds/${id}`, { method: "DELETE" }),
+  fulfillHold: (id: number) =>
+    request<{ ok: boolean }>(`/api/holds/${id}/fulfill`, { method: "POST" }),
 };

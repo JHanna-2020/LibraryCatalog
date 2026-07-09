@@ -1,0 +1,122 @@
+/* Buttons, toolbar controls, pills. */
+
+.btn {
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  padding: 0.5rem 0.95rem;
+  border-radius: var(--radius);
+  font-weight: 600;
+  font-size: 0.9rem;
+  letter-spacing: 0.02em;
+  transition: border-color 120ms ease, background-color 120ms ease,
+    color 120ms ease, box-shadow 120ms ease;
+}
+.btn:hover { border-color: var(--green); color: var(--green); }
+@media (prefers-color-scheme: dark) {
+  .btn:hover { border-color: var(--brass); color: var(--brass); }
+}
+
+.btn-primary {
+  background: var(--green);
+  color: #f2eeda;
+  border-color: var(--green);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+.btn-primary:hover {
+  background: var(--green-deep);
+  border-color: var(--green-deep);
+  color: #f2eeda;
+}
+
+.btn-danger {
+  background: var(--madder);
+  color: #fbf7ea;
+  border-color: var(--madder);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+.btn-danger:hover {
+  filter: brightness(0.92);
+  border-color: var(--madder);
+  color: #fbf7ea;
+}
+
+.btn-ghost { background: none; border-color: transparent; }
+.btn-ghost:hover { background: var(--surface-sunken); border-color: transparent; color: var(--ink); }
+
+.btn-small { padding: 0.3rem 0.6rem; font-size: 0.8rem; }
+.btn:disabled { opacity: 0.55; cursor: default; }
+
+.linklike {
+  border: none;
+  background: none;
+  padding: 0;
+  color: var(--green);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+@media (prefers-color-scheme: dark) {
+  .linklike { color: var(--brass); }
+}
+
+/* ---- Toolbar ---------------------------------------------------------------- */
+
+.toolbar { display: flex; flex-wrap: wrap; gap: 0.6rem; margin-bottom: 1.1rem; }
+
+.search {
+  flex: 1;
+  min-width: 220px;
+  padding: 0.55rem 0.9rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  transition: border-color 120ms ease;
+}
+.search::placeholder { color: var(--muted); font-style: italic; font-family: var(--serif); }
+.search:focus { border-color: var(--green); }
+
+.toolbar select {
+  padding: 0.55rem 2rem 0.55rem 0.8rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background-color: var(--surface);
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%237d7360' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.7rem center;
+  font-size: 0.9rem;
+}
+
+/* Catalog rule: "12 of 340 books" set like a ledger heading */
+.result-count {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  margin-bottom: 1rem;
+}
+.result-count::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+}
+
+/* ---- Pills ------------------------------------------------------------------ */
+
+.pill {
+  background: var(--brass);
+  color: #fbf7ea;
+  border-radius: 999px;
+  padding: 0.05rem 0.5rem;
+  font-family: var(--sans);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1.5;
+}

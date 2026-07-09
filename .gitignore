@@ -4,6 +4,7 @@ dist/
 server/library.db
 server/library.db-shm
 server/library.db-wal
+server/library.db.backup*
 .DS_Store
 *.log
 *.tsbuildinfo
