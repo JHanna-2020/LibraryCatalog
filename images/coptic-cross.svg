@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="currentColor" role="img" aria-label="Coptic cross">
+  <!-- Four flared arms (wider at the tips) meeting at the centre -->
+  <polygon points="44,50 56,50 63,13 37,13" />
+  <polygon points="44,50 56,50 63,87 37,87" />
+  <polygon points="50,44 50,56 13,63 13,37" />
+  <polygon points="50,44 50,56 87,63 87,37" />
+  <!-- Small circles at each arm tip -->
+  <circle cx="50" cy="11" r="4" />
+  <circle cx="50" cy="89" r="4" />
+  <circle cx="11" cy="50" r="4" />
+  <circle cx="89" cy="50" r="4" />
+  <!-- Four dots in the quadrants around the centre -->
+  <circle cx="31" cy="31" r="3.4" />
+  <circle cx="69" cy="31" r="3.4" />
+  <circle cx="31" cy="69" r="3.4" />
+  <circle cx="69" cy="69" r="3.4" />
+</svg>
