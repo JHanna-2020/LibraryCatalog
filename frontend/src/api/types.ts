@@ -49,6 +49,19 @@ export interface LoanRecord {
   returned_at: string | null;
 }
 
+export interface ReadRecord {
+  id: number;
+  book_id: number;
+  reader_name: string;
+  finished_at: string;
+}
+
+export interface ReadEntry extends ReadRecord {
+  book_title: string;
+  authors: string;
+  cover_url: string;
+}
+
 /** Summary row (GET /api/borrowers). */
 export interface Borrower {
   id: number;

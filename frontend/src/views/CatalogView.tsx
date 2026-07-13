@@ -19,6 +19,7 @@ export default function CatalogView({
   onDelete,
   onCheckout,
   onCheckin,
+  onMarkRead,
   onRequestHold,
   onGoSettings,
 }: {
@@ -37,6 +38,7 @@ export default function CatalogView({
   onDelete: (b: Book) => void;
   onCheckout: (b: Book) => void;
   onCheckin: (b: Book) => void;
+  onMarkRead: (b: Book) => void;
   onRequestHold: (b: Book) => void;
   onGoSettings: () => void;
 }) {
@@ -94,6 +96,7 @@ export default function CatalogView({
               onDelete={onDelete}
               onCheckout={onCheckout}
               onCheckin={onCheckin}
+              onMarkRead={onMarkRead}
               onRequestHold={onRequestHold}
             />
           ))}

@@ -9,6 +9,8 @@ import type {
   Hold,
   HoldReceipt,
   LoanRecord,
+  ReadEntry,
+  ReadRecord,
 } from "./types";
 
 // The website is static (on GitHub Pages) and points at YOUR laptop's API.
@@ -107,6 +109,18 @@ export const api = {
     request<Partial<BookInput>>(`/api/lookup/${encodeURIComponent(isbn)}`),
 
   bookHistory: (id: number) => request<LoanRecord[]>(`/api/books/${id}/history`),
+  bookReads: (id: number) => request<ReadRecord[]>(`/api/books/${id}/reads`),
+  markRead: (bookId: number, reader_name: string, finished_at: string) =>
+    request<ReadRecord>(`/api/books/${bookId}/reads`, {
+      method: "POST",
+      body: JSON.stringify({ reader_name, finished_at }),
+    }),
+  listReads: (reader = "") =>
+    request<ReadEntry[]>(
+      `/api/reads${reader ? `?reader=${encodeURIComponent(reader)}` : ""}`
+    ),
+  listReaders: () => request<string[]>("/api/reads/readers"),
+  deleteRead: (id: number) => request<{ ok: boolean }>(`/api/reads/${id}`, { method: "DELETE" }),
   listBorrowers: () => request<Borrower[]>("/api/borrowers"),
   borrowerLoans: (id: number) => request<BorrowerLoan[]>(`/api/borrowers/${id}/loans`),
 

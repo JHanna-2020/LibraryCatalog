@@ -49,10 +49,19 @@ export const checkoutSchema = z.object({
   borrower_contact: optionalText,
 });
 
+export const readCreateSchema = z.object({
+  reader_name: z
+    .string({ message: "Reader name is required." })
+    .transform((s) => s.trim())
+    .refine((s) => s.length > 0, { message: "Reader name is required." }),
+  finished_at: optionalText,
+});
+
 export type BookCreateBody = z.infer<typeof bookCreateSchema>;
 export type BookUpdateBody = z.infer<typeof bookUpdateSchema>;
 export type CheckoutBody = z.infer<typeof checkoutSchema>;
 export type HoldRequestBody = z.infer<typeof holdRequestSchema>;
+export type ReadCreateBody = z.infer<typeof readCreateSchema>;
 
 /** Comma-joined storage format, same normalization the legacy server used. */
 export function normalizeTags(t: BookCreateBody["tags"]): string {

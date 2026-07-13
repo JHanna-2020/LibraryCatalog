@@ -3,6 +3,7 @@ import type { Book } from "../api";
 import { formatDate } from "../utils/format";
 import Modal from "./Modal";
 import LoanHistory from "./LoanHistory";
+import ReadHistory from "./ReadHistory";
 
 /** Read-only book view with metadata, notes and the loan history section. */
 export default function BookDetailModal({
@@ -12,6 +13,8 @@ export default function BookDetailModal({
   onEdit,
   onCheckout,
   onCheckin,
+  onMarkRead,
+  readHistoryVersion,
   onRequestHold,
 }: {
   book: Book;
@@ -20,6 +23,8 @@ export default function BookDetailModal({
   onEdit: (b: Book) => void;
   onCheckout: (b: Book) => void;
   onCheckin: (b: Book) => void;
+  onMarkRead: (b: Book) => void;
+  readHistoryVersion?: number;
   onRequestHold: (b: Book) => void;
 }) {
   const out = book.status === "checked_out";
@@ -101,6 +106,9 @@ export default function BookDetailModal({
       <h3 className="detail-section-title">Loan history</h3>
       <LoanHistory bookId={book.id} />
 
+      <h3 className="detail-section-title">Read history</h3>
+      <ReadHistory bookId={book.id} version={readHistoryVersion} />
+
       <div className="row-end">
         {out && !isAdmin && (
           <button className="btn btn-primary" onClick={() => onRequestHold(book)}>
@@ -117,6 +125,9 @@ export default function BookDetailModal({
               Check out
             </button>
           ))}
+        <button className="btn" onClick={() => onMarkRead(book)}>
+          Mark read
+        </button>
         {isAdmin && (
           <button className="btn btn-ghost" onClick={() => onEdit(book)}>
             Edit

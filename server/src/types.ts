@@ -119,6 +119,19 @@ export interface NextHold {
   requested_at: string;
 }
 
+export interface ReadRow {
+  id: number;
+  book_id: number;
+  reader_name: string;
+  finished_at: string;
+}
+
+export interface ReadEntry extends ReadRow {
+  book_title: string;
+  authors: string;
+  cover_url: string;
+}
+
 export class HttpError extends Error {
   constructor(
     public status: number,

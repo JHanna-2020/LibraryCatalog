@@ -11,6 +11,7 @@ describe("migration runner", () => {
       "001-baseline",
       "002-borrowers-and-loan-history",
       "003-holds",
+      "004-reads",
     ]);
     const second = migrate(db);
     expect(second).toEqual([]);
@@ -22,6 +23,7 @@ describe("migration runner", () => {
     expect(tables).toContain("loans");
     expect(tables).toContain("borrowers");
     expect(tables).toContain("holds");
+    expect(tables).toContain("reads");
     expect(tables).toContain("migrations");
     db.close();
   });

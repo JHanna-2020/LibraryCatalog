@@ -16,13 +16,15 @@ import BookDetailModal from "./components/BookDetailModal";
 import CheckoutModal from "./components/CheckoutModal";
 import HoldRequestModal from "./components/HoldRequestModal";
 import HoldHandoffModal from "./components/HoldHandoffModal";
+import MarkReadModal from "./components/MarkReadModal";
 import CatalogView from "./views/CatalogView";
 import CheckedOutView from "./views/CheckedOutView";
 import BorrowersView from "./views/BorrowersView";
 import HoldsView from "./views/HoldsView";
+import ReadsView from "./views/ReadsView";
 import SettingsView from "./views/SettingsView";
 
-type View = "catalog" | "out" | "borrowers" | "holds" | "settings";
+type View = "catalog" | "out" | "borrowers" | "reads" | "holds" | "settings";
 
 export default function App() {
   return (
@@ -47,6 +49,8 @@ function AppShell() {
   const [detailBook, setDetailBook] = useState<Book | null>(null);
   const [confirmReq, setConfirmReq] = useState<ConfirmRequest | null>(null);
   const [holdFor, setHoldFor] = useState<Book | null>(null);
+  const [readFor, setReadFor] = useState<Book | null>(null);
+  const [readHistoryVersion, setReadHistoryVersion] = useState(0);
   const [handoff, setHandoff] = useState<{ book: Book; hold: NextHold } | null>(null);
 
   const hasServer = !!getApiBase();
@@ -130,6 +134,9 @@ function AppShell() {
     setDetailBook(null);
     setHoldFor(b);
   }
+  function startMarkRead(b: Book) {
+    setReadFor(b);
+  }
 
   async function handleLogin(pw: string) {
     await login(pw);
@@ -158,6 +165,9 @@ function AppShell() {
           </button>
           <button className={navCls(view === "borrowers")} onClick={() => setView("borrowers")}>
             Borrowers
+          </button>
+          <button className={navCls(view === "reads")} onClick={() => setView("reads")}>
+            Reads
           </button>
           {isAdmin && (
             <button className={navCls(view === "holds")} onClick={() => setView("holds")}>
@@ -210,12 +220,14 @@ function AppShell() {
             onDelete={removeBook}
             onCheckout={startCheckout}
             onCheckin={checkinBook}
+            onMarkRead={startMarkRead}
             onRequestHold={startHoldRequest}
             onGoSettings={() => setView("settings")}
           />
         )}
         {view === "out" && <CheckedOutView checkouts={checkouts} />}
         {view === "borrowers" && <BorrowersView />}
+        {view === "reads" && <ReadsView isAdmin={isAdmin} />}
         {view === "holds" && isAdmin && <HoldsView onChanged={reload} />}
         {view === "settings" && (
           <SettingsView onSaved={reload} connected={connected} onCheckConnection={reload} />
@@ -260,7 +272,20 @@ function AppShell() {
           onEdit={openEdit}
           onCheckout={startCheckout}
           onCheckin={checkinBook}
+          onMarkRead={startMarkRead}
+          readHistoryVersion={readHistoryVersion}
           onRequestHold={startHoldRequest}
+        />
+      )}
+      {readFor && (
+        <MarkReadModal
+          book={readFor}
+          onCancel={() => setReadFor(null)}
+          onDone={async () => {
+            setReadFor(null);
+            setReadHistoryVersion((n) => n + 1);
+            toast.success(`Marked "${readFor.title}" as read.`);
+          }}
         />
       )}
       {holdFor && (

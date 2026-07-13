@@ -6,9 +6,11 @@ import { BooksRepo } from "./repositories/booksRepo.js";
 import { LoansRepo } from "./repositories/loansRepo.js";
 import { BorrowersRepo } from "./repositories/borrowersRepo.js";
 import { HoldsRepo } from "./repositories/holdsRepo.js";
+import { ReadsRepo } from "./repositories/readsRepo.js";
 import { BooksService } from "./services/booksService.js";
 import { LoansService } from "./services/loansService.js";
 import { HoldsService } from "./services/holdsService.js";
+import { ReadsService } from "./services/readsService.js";
 import { CoversService } from "./services/coversService.js";
 import { requireAdmin } from "./middleware/auth.js";
 import { errorHandler, notFoundHandler } from "./middleware/errors.js";
@@ -17,6 +19,7 @@ import { createBooksRouter } from "./routes/books.js";
 import { createLoansRouter } from "./routes/loans.js";
 import { createBorrowersRouter } from "./routes/borrowers.js";
 import { createHoldsRouter } from "./routes/holds.js";
+import { createReadsRouter } from "./routes/reads.js";
 import { createCoversRouter } from "./routes/covers.js";
 import { createLookupRouter } from "./routes/lookup.js";
 import type { IsbnSource } from "./lib/isbn/index.js";
@@ -27,6 +30,7 @@ export interface AppContext {
   booksService: BooksService;
   loansService: LoansService;
   holdsService: HoldsService;
+  readsService: ReadsService;
   coversService: CoversService;
   borrowersRepo: BorrowersRepo;
   loansRepo: LoansRepo;
@@ -44,6 +48,7 @@ export function createContext(
   const loansRepo = new LoansRepo(db);
   const borrowersRepo = new BorrowersRepo(db);
   const holdsRepo = new HoldsRepo(db);
+  const readsRepo = new ReadsRepo(db);
   const coversService = new CoversService(config.coversDir);
   return {
     config,
@@ -51,6 +56,7 @@ export function createContext(
     booksService: new BooksService(booksRepo, coversService),
     loansService: new LoansService(db, booksRepo, loansRepo, borrowersRepo, holdsRepo),
     holdsService: new HoldsService(db, booksRepo, loansRepo, holdsRepo),
+    readsService: new ReadsService(booksRepo, readsRepo),
     coversService,
     borrowersRepo,
     loansRepo,
@@ -78,6 +84,7 @@ export function createApp(ctx: AppContext): express.Express {
   app.use(createLoansRouter(ctx));
   app.use(createBorrowersRouter(ctx));
   app.use(createHoldsRouter(ctx));
+  app.use(createReadsRouter(ctx));
   app.use(createCoversRouter(ctx));
   app.use(createLookupRouter(ctx));
 

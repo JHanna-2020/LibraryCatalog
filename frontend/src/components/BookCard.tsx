@@ -9,6 +9,7 @@ export default function BookCard({
   onDelete,
   onCheckout,
   onCheckin,
+  onMarkRead,
   onRequestHold,
 }: {
   book: Book;
@@ -18,6 +19,7 @@ export default function BookCard({
   onDelete: (b: Book) => void;
   onCheckout: (b: Book) => void;
   onCheckin: (b: Book) => void;
+  onMarkRead: (b: Book) => void;
   onRequestHold: (b: Book) => void;
 }) {
   const out = book.status === "checked_out";
@@ -81,17 +83,25 @@ export default function BookCard({
           <button className="btn btn-small btn-ghost" onClick={() => onEdit(book)}>
             Edit
           </button>
+          <button className="btn btn-small btn-ghost" onClick={() => onMarkRead(book)}>
+            Mark read
+          </button>
           <button className="btn btn-small btn-ghost" onClick={() => onDelete(book)}>
             Delete
           </button>
         </div>
-      ) : out ? (
+      ) : (
         <div className="card-actions">
-          <button className="btn btn-small" onClick={() => onRequestHold(book)}>
-            Request hold
+          {out && (
+            <button className="btn btn-small" onClick={() => onRequestHold(book)}>
+              Request hold
+            </button>
+          )}
+          <button className="btn btn-small" onClick={() => onMarkRead(book)}>
+            Mark read
           </button>
         </div>
-      ) : null}
+      )}
     </div>
   );
 }
